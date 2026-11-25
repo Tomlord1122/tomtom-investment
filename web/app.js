@@ -132,24 +132,6 @@ function rollingCagr(rows, years = 5) {
   return out;
 }
 
-function correlation(left, right) {
-  const rightMap = new Map(right);
-  const pairs = left.filter(([month]) => rightMap.has(month)).map(([month, value]) => [value, rightMap.get(month)]);
-  if (pairs.length < 12) return null;
-  const mean = (index) => pairs.reduce((sum, pair) => sum + pair[index], 0) / pairs.length;
-  const leftMean = mean(0);
-  const rightMean = mean(1);
-  let cross = 0;
-  let leftVar = 0;
-  let rightVar = 0;
-  pairs.forEach(([a, b]) => {
-    cross += (a - leftMean) * (b - rightMean);
-    leftVar += (a - leftMean) ** 2;
-    rightVar += (b - rightMean) ** 2;
-  });
-  return cross / Math.sqrt(leftVar * rightVar);
-}
-
 function annualRows(rows) {
   const grouped = new Map();
   rows.forEach(([month, value]) => {
@@ -405,14 +387,7 @@ function renderTables() {
       <td>${money.format(mix.dca ? mix.curve.at(-1)[1] : mix.monthly * mix.rows.reduce((growth, [, value]) => growth * (1 + value), 1))}</td>
     </tr>
   `).join("");
-  const comparable = mixes.filter((mix) => !mix.benchmark);
-  document.querySelector("#corr").innerHTML = comparable.length < 2 ? "" : comparable.map((left, leftIndex) => `
-    <tr>
-      <td>${left.name}</td>
-      ${comparable.map((right, rightIndex) => `<td>${leftIndex === rightIndex ? "1.00" : (correlation(left.rows, right.rows) ?? NaN).toFixed(2)}</td>`).join("")}
-    </tr>
-  `).join("");
-  const heatMix = comparable[0];
+  const heatMix = mixes.find((mix) => !mix.benchmark);
   document.querySelector("#heat").innerHTML = heatMix ? heatMix.rows.map(([month, value]) => {
     const alpha = Math.min(Math.abs(value) / 0.08, 1);
     const color = value < 0 ? `rgba(185, 28, 28, ${alpha})` : `rgba(15, 118, 110, ${alpha})`;
