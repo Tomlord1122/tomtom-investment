@@ -116,6 +116,12 @@ def twse_month_ends(symbol: str) -> pd.DataFrame:
     stock_no = symbol.split(".", 1)[0]
     frames = []
     start = datetime(2012, 1, 1, tzinfo=timezone.utc)
+    if HISTORY_PATH.exists():
+        previous = pd.read_parquet(HISTORY_PATH)
+        saved = previous[previous["symbol"] == symbol]
+        if not saved.empty:
+            year, month = saved["month"].max().split("-")
+            start = datetime(int(year), int(month), 1, tzinfo=timezone.utc)
     cursor = start
     now = datetime.now(timezone.utc)
     while cursor <= now:
