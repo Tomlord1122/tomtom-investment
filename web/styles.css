@@ -19,9 +19,17 @@ header {
 h1, p { margin: 0; }
 
 h1 {
+  display: flex;
+  gap: 10px;
+  align-items: center;
   font-family: "Iowan Old Style", Palatino, "Palatino Linotype", serif;
   font-size: 32px;
   font-weight: 500;
+}
+
+h1 img {
+  width: 28px;
+  height: 28px;
 }
 
 .meta, small, .fine, #note {
