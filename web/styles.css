@@ -127,7 +127,7 @@ button {
 
 .window {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   overflow: hidden;
@@ -168,6 +168,25 @@ button {
   border-radius: 8px;
   text-align: center;
 }
+
+.dates { display: flex; gap: 8px; }
+
+.dates input, #rebalance {
+  border: 0;
+  border-bottom: 1px solid #d1d5db;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+}
+
+.chart-mode { grid-template-columns: repeat(3, 1fr); margin-bottom: 10px; }
+
+h2 { margin: 22px 0 0; font-size: 14px; font-weight: 560; }
+
+#heat { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 8px; }
+
+#heat i { width: 14px; height: 14px; background: #e5e7eb; }
 
 .chart-wrap { position: relative; }
 

@@ -26,35 +26,43 @@ function returnsFromSeries(series) {
   return out;
 }
 
-function windowStart() {
-  const years = Number(document.querySelector("#window .is-on").dataset.years);
-  if (!years) return "";
-  const end = document.querySelector("#updated").dataset.end;
-  if (!end) return "";
+function selectedRange() {
+  const preset = document.querySelector("#window .is-on").dataset.years;
+  const end = document.querySelector("#to").value || document.querySelector("#updated").dataset.end || "";
+  if (preset === "custom") return [document.querySelector("#from").value, end];
+  if (!preset || !end) return ["", end];
   const [year, month] = end.split("-").map(Number);
-  const start = new Date(Date.UTC(year - years, month - 1, 1));
-  return start.toISOString().slice(0, 7);
+  const start = new Date(Date.UTC(year - Number(preset), month - 1, 1));
+  return [start.toISOString().slice(0, 7), end];
 }
 
 function overlap(selected, series) {
   const maps = selected.map((symbol) => new Map(returnsFromSeries(series[symbol])));
-  const start = windowStart();
-  const months = [...maps[0].keys()].filter((month) => month >= start && maps.every((item) => item.has(month)));
+  const [start, end] = selectedRange();
+  const months = [...maps[0].keys()].filter((month) => month >= start && (!end || month <= end) && maps.every((item) => item.has(month)));
   months.sort();
   return months.map((month) => [month, selected.map((symbol, index) => maps[index].get(month))]);
 }
 
-function portfolioReturns(rows, symbols, weights) {
+function shouldReset(month, previous, frequency) {
+  if (frequency === "none") return previous == null;
+  if (frequency === "month") return true;
+  if (frequency === "quarter") {
+    const quarter = Math.floor((Number(month.slice(5)) - 1) / 3);
+    const previousQuarter = previous ? Math.floor((Number(previous.slice(5)) - 1) / 3) : null;
+    return previous == null || previous.slice(0, 4) !== month.slice(0, 4) || previousQuarter !== quarter;
+  }
+  return previous == null || previous.slice(0, 4) !== month.slice(0, 4);
+}
+
+function portfolioReturns(rows, symbols, weights, frequency = document.querySelector("#rebalance").value) {
   const target = normalize(weights);
   const order = symbols.map((symbol) => target[symbol]);
   let held = order.slice();
-  let year = null;
+  let previous = null;
   return rows.map(([month, assetReturns]) => {
-    const nextYear = month.slice(0, 4);
-    if (year !== nextYear) {
-      held = order.slice();
-      year = nextYear;
-    }
+    if (shouldReset(month, previous, frequency)) held = order.slice();
+    previous = month;
     const portfolio = held.reduce((sum, weight, index) => sum + weight * assetReturns[index], 0);
     const grown = held.map((weight, index) => weight * (1 + assetReturns[index]));
     const total = grown.reduce((sum, value) => sum + value, 0);
@@ -101,6 +109,45 @@ function summarize(rows) {
     maxDrawdown,
     final: null,
   };
+}
+
+function drawdownSeries(rows) {
+  let growth = 1;
+  let peak = 1;
+  return rows.map(([month, value]) => {
+    growth *= 1 + value;
+    peak = Math.max(peak, growth);
+    return [month, growth / peak - 1];
+  });
+}
+
+function rollingCagr(rows, years = 5) {
+  const width = years * 12;
+  const out = [];
+  for (let index = width; index <= rows.length; index += 1) {
+    const slice = rows.slice(index - width, index);
+    const growth = slice.reduce((product, [, value]) => product * (1 + value), 1);
+    out.push([rows[index - 1][0], growth ** (1 / years) - 1]);
+  }
+  return out;
+}
+
+function correlation(left, right) {
+  const rightMap = new Map(right);
+  const pairs = left.filter(([month]) => rightMap.has(month)).map(([month, value]) => [value, rightMap.get(month)]);
+  if (pairs.length < 12) return null;
+  const mean = (index) => pairs.reduce((sum, pair) => sum + pair[index], 0) / pairs.length;
+  const leftMean = mean(0);
+  const rightMean = mean(1);
+  let cross = 0;
+  let leftVar = 0;
+  let rightVar = 0;
+  pairs.forEach(([a, b]) => {
+    cross += (a - leftMean) * (b - rightMean);
+    leftVar += (a - leftMean) ** 2;
+    rightVar += (b - rightMean) ** 2;
+  });
+  return cross / Math.sqrt(leftVar * rightVar);
 }
 
 function annualRows(rows) {
@@ -157,7 +204,7 @@ function renderPicker(data) {
 }
 
 function saveMixes() {
-  const saved = mixes.map(({ name, weights, dca, monthly }) => ({ name, weights, dca, monthly }));
+  const saved = mixes.filter((mix) => !mix.benchmark).map(({ weights, dca, monthly }) => ({ weights, dca, monthly }));
   localStorage.setItem(storageKey, JSON.stringify(saved));
 }
 
@@ -165,26 +212,34 @@ function rebuildMixes(data) {
   const saved = JSON.parse(localStorage.getItem(storageKey) || "[]");
   mixes.splice(0);
   saved.forEach((mix) => addMix(data, mix.weights, Boolean(mix.dca), false, mix.monthly));
+  ensureBenchmark(data);
   if (!mixes.length && saved.length) document.querySelector("#note").textContent = "這個區間裡，已存的組合沒有足夠月份";
 }
 
-function addMix(data, weights, dca = document.querySelector("#dca").checked, persist = true, monthly = monthlyAmount()) {
+function ensureBenchmark(data) {
+  const kept = mixes.filter((mix) => !mix.benchmark);
+  mixes.splice(0, mixes.length, ...kept);
+  addMix(data, { "0050.TW": 100 }, false, false, 10000, true);
+}
+
+function addMix(data, weights, dca = document.querySelector("#dca").checked, persist = true, monthly = monthlyAmount(), benchmark = false) {
   const note = document.querySelector("#note");
   try {
     const clean = normalize(weights);
     const symbols = Object.keys(clean);
     const rows = portfolioReturns(overlap(symbols, data.series), symbols, clean);
     if (rows.length < 2) throw new Error("重疊月份不夠");
-    if (mixes.length >= colors.length) throw new Error("最多五組");
+    if (mixes.filter((mix) => !mix.benchmark).length >= colors.length && !benchmark) throw new Error("最多五組");
     mixes.push({
-      name: label(clean) + (dca ? ` · 定額 ${money.format(monthly)}` : ""),
+      name: (benchmark ? "基準 " : "") + label(clean) + (dca ? ` · 定額 ${money.format(monthly)}` : ""),
       weights: clean,
+      benchmark,
       dca,
       monthly,
       rows,
       curve: dca ? dcaValue(rows, monthly) : null,
       summary: summarize(rows),
-      color: colors[mixes.length],
+      color: benchmark ? "#9ca3af" : colors[mixes.filter((item) => !item.benchmark).length],
     });
     note.textContent = "";
     if (persist) saveMixes();
@@ -192,6 +247,12 @@ function addMix(data, weights, dca = document.querySelector("#dca").checked, per
   } catch (error) {
     note.textContent = error.message;
   }
+}
+
+function lineSeries(rows, mode) {
+  if (mode === "drawdown") return new Map(drawdownSeries(rows));
+  if (mode === "rolling") return new Map(rollingCagr(rows));
+  return curveOf({ rows, monthly: 1, dca: false });
 }
 
 function curveOf(mix) {
@@ -210,10 +271,20 @@ function monthIndex(month) {
   return year * 12 + part;
 }
 
+function chartMode() {
+  return document.querySelector("#chart-mode .is-on").dataset.mode;
+}
+
+function shownMixes() {
+  return chartMode() === "value" ? mixes : mixes.filter((mix) => !mix.benchmark);
+}
+
 function scales() {
-  const curves = mixes.map(curveOf);
+  const mode = chartMode();
+  const curves = shownMixes().map((mix) => (mode === "value" ? curveOf(mix) : lineSeries(mix.rows, mode)));
   const months = [...new Set(curves.flatMap((curve) => [...curve.keys()]))].sort();
   const flat = curves.flatMap((curve) => [...curve.values()]);
+  if (!flat.length) return { curves, months, min: 0, max: 1 };
   return {
     curves,
     months,
@@ -242,7 +313,7 @@ function draw() {
   ctx.lineTo(canvas.width - pad, canvas.height - pad);
   ctx.stroke();
   scale.curves.forEach((curve, index) => {
-    ctx.strokeStyle = mixes[index].color;
+    ctx.strokeStyle = shownMixes()[index].color;
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     let started = false;
@@ -279,12 +350,14 @@ function hoverAt(event) {
   ctx.moveTo(lineX, pad);
   ctx.lineTo(lineX, canvas.height - pad);
   ctx.stroke();
-  const rows = mixes.map((mix, mixIndex) => {
+  const visible = shownMixes();
+  const rows = visible.map((mix, mixIndex) => {
     const value = scale.curves[mixIndex].get(month);
     if (value == null) return `<div style="color:${mix.color}">${month} ${mix.name} —</div>`;
-    const contributed = mix.dca ? mix.curve.find(([item]) => item === month)[2] : mix.monthly;
-    const gain = value / contributed - 1;
-    return `<div style="color:${mix.color}">${month} ${mix.name}<br>${money.format(value)} · ${pct(gain)}</div>`;
+    const text = chartMode() === "value"
+      ? `${money.format(value)} · ${pct(value / (mix.dca ? mix.curve.find(([item]) => item === month)[2] : mix.monthly) - 1)}`
+      : pct(value);
+    return `<div style="color:${mix.color}">${month} ${mix.name}<br>${text}</div>`;
   });
   box.hidden = false;
   box.innerHTML = rows.join("");
@@ -292,7 +365,7 @@ function hoverAt(event) {
 
 function renderTables() {
   document.querySelector("#legend").innerHTML = mixes.map((mix, index) =>
-    `<span><i class="swatch" style="background:${mix.color}"></i>${mix.name}<button class="remove" data-index="${index}" type="button">移除</button></span>`
+    `<span><i class="swatch" style="background:${mix.color}"></i>${mix.name}${mix.benchmark ? "" : `<button class="remove" data-index="${index}" type="button">移除</button>`}</span>`
   ).join("");
   document.querySelectorAll(".remove").forEach((button) => {
     button.addEventListener("click", () => {
@@ -312,6 +385,19 @@ function renderTables() {
       <td>${money.format(mix.dca ? mix.curve.at(-1)[1] : curveOf(mix).at(-1))}</td>
     </tr>
   `).join("");
+  const comparable = mixes.filter((mix) => !mix.benchmark);
+  document.querySelector("#corr").innerHTML = comparable.length < 2 ? "" : comparable.map((left, leftIndex) => `
+    <tr>
+      <td>${left.name}</td>
+      ${comparable.map((right, rightIndex) => `<td>${leftIndex === rightIndex ? "1.00" : (correlation(left.rows, right.rows) ?? NaN).toFixed(2)}</td>`).join("")}
+    </tr>
+  `).join("");
+  const heatMix = comparable[0];
+  document.querySelector("#heat").innerHTML = heatMix ? heatMix.rows.map(([month, value]) => {
+    const alpha = Math.min(Math.abs(value) / 0.08, 1);
+    const color = value < 0 ? `rgba(185, 28, 28, ${alpha})` : `rgba(15, 118, 110, ${alpha})`;
+    return `<i title="${month} ${pct(value)}" style="background:${color}"></i>`;
+  }).join("") : "";
   const years = [...new Set(mixes.flatMap((mix) => annualRows(mix.rows).map((row) => row.year)))].sort();
   document.querySelector("#year-head").innerHTML = `<th>年度</th>${mixes.map((mix) => `<th>${mix.name}</th>`).join("")}`;
   document.querySelector("#years").innerHTML = years.map((year) => {
@@ -341,7 +427,20 @@ async function main() {
       item.classList.toggle("is-on", on);
       item.setAttribute("aria-pressed", String(on));
     });
+    document.querySelector(".dates").hidden = button.dataset.years !== "custom";
     rebuildMixes(data);
+  });
+  document.querySelector("#rebalance").addEventListener("change", () => rebuildMixes(data));
+  document.querySelector(".dates").addEventListener("change", () => rebuildMixes(data));
+  document.querySelector("#chart-mode").addEventListener("click", (event) => {
+    const button = event.target.closest("button");
+    if (!button) return;
+    document.querySelectorAll("#chart-mode button").forEach((item) => {
+      const on = item === button;
+      item.classList.toggle("is-on", on);
+      item.setAttribute("aria-pressed", String(on));
+    });
+    draw();
   });
   document.querySelector("#chart").addEventListener("mousemove", hoverAt);
   document.querySelector("#chart").addEventListener("mouseleave", () => {
@@ -351,8 +450,10 @@ async function main() {
   const saved = JSON.parse(localStorage.getItem(storageKey) || "[]");
   if (saved.length) {
     saved.forEach((mix) => addMix(data, mix.weights, Boolean(mix.dca), true, mix.monthly || 10000));
+    ensureBenchmark(data);
     return;
   }
+  ensureBenchmark(data);
   const box = document.querySelector('input[value="0050.TW"]');
   const weight = box.closest(".pick").querySelector(".weight");
   box.checked = true;

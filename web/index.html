@@ -22,7 +22,20 @@
             <button type="button" data-years="0" class="is-on" aria-pressed="true">全部</button>
             <button type="button" data-years="5" aria-pressed="false">5 年</button>
             <button type="button" data-years="10" aria-pressed="false">10 年</button>
+            <button type="button" data-years="custom" aria-pressed="false">自訂</button>
           </div>
+          <div class="dates" hidden>
+            <input id="from" type="month">
+            <input id="to" type="month">
+          </div>
+          <label class="amount">再平衡
+            <select id="rebalance">
+              <option value="year">每年</option>
+              <option value="quarter">每季</option>
+              <option value="month">每月</option>
+              <option value="none">不調整</option>
+            </select>
+          </label>
           <div class="amount-row">
             <label class="mode"><input id="dca" type="checkbox"> 定期定額</label>
             <label class="amount">每月 <input id="amount" type="number" min="1" step="1000" value="10000"></label>
@@ -33,6 +46,11 @@
       </aside>
       <div>
         <p id="note"></p>
+        <div class="window chart-mode" id="chart-mode" role="group" aria-label="圖表">
+          <button type="button" data-mode="value" class="is-on" aria-pressed="true">市值</button>
+          <button type="button" data-mode="drawdown" aria-pressed="false">回撤</button>
+          <button type="button" data-mode="rolling" aria-pressed="false">5 年滾動</button>
+        </div>
         <div id="legend"></div>
         <div class="chart-wrap">
           <canvas id="chart" width="720" height="280"></canvas>
@@ -55,7 +73,11 @@
           <thead><tr id="year-head"><th>年度</th></tr></thead>
           <tbody id="years"></tbody>
         </table>
-        <p class="fine">區間從最新月份往回切，各組仍要自己的標的都有資料。起點都是 1 萬。不滿 12 個月的年度標了 *。台幣與美元沒有換成同一種貨幣。含息還原價，未扣稅和手續費。過去績效不代表未來。</p>
+        <h2>相關性</h2>
+        <table><tbody id="corr"></tbody></table>
+        <h2>月報酬</h2>
+        <div id="heat"></div>
+        <p class="fine">灰色線是 0050。回撤和滾動圖不畫基準。相關性是月報酬，至少要 12 個重疊月。月色塊是第一組，顏色越深波動越大。台幣與美元沒有換成同一種貨幣。含息還原價，未扣稅和手續費。過去績效不代表未來。</p>
       </div>
     </section>
   </main>
