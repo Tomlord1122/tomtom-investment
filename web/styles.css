@@ -78,7 +78,7 @@ aside {
 
 .pick {
   display: grid;
-  grid-template-columns: 16px 1fr 52px;
+  grid-template-columns: 16px 1fr 92px;
   gap: 8px;
   align-items: center;
   padding: 7px 0;
@@ -100,14 +100,15 @@ aside {
 }
 
 .weight {
-  width: 52px;
-  border: 0;
-  border-bottom: 1px solid #d1d5db;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  text-align: right;
+  width: 92px;
+  accent-color: #1f2937;
 }
+
+.error { color: #b91c1c; font-size: 12px; }
+
+#legend span { cursor: pointer; }
+
+#save[hidden] { display: none; }
 
 .weight:disabled { color: #d1d5db; }
 

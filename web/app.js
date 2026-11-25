@@ -158,6 +158,7 @@ function selectedWeights() {
     const box = row.querySelector('input[type="checkbox"]');
     if (!box.checked) return;
     weights[box.value] = Number(row.querySelector(".weight").value);
+    if (weights[box.value] > 100) throw new Error("單檔比例不能超過 100");
   });
   return weights;
 }
@@ -171,11 +172,16 @@ function renderPicker(data) {
     row.innerHTML = `
       <input type="checkbox" value="${item.symbol}">
       <span><strong>${item.symbol}</strong><small>${item.name}</small></span>
-      <input class="weight" type="number" min="0" max="100" value="50" disabled>
+      <input class="weight" type="range" min="0" max="100" value="0" disabled>
     `;
     const box = row.querySelector('input[type="checkbox"]');
     const weight = row.querySelector(".weight");
-    box.addEventListener("change", () => { weight.disabled = !box.checked; });
+    box.addEventListener("change", () => {
+      weight.disabled = !box.checked;
+      if (box.checked && Number(weight.value) === 0) weight.value = "50";
+      checkWeights();
+    });
+    weight.addEventListener("input", checkWeights);
     picker.appendChild(row);
   });
   document.querySelector("#filter").addEventListener("input", (event) => {
@@ -184,6 +190,31 @@ function renderPicker(data) {
       row.classList.toggle("is-hidden", query !== "" && !row.dataset.find.includes(query));
     });
   });
+}
+
+function checkWeights() {
+  const total = Object.values(selectedWeights()).reduce((sum, value) => sum + value, 0);
+  const error = document.querySelector("#weight-error");
+  error.hidden = total <= 100;
+  return total <= 100;
+}
+
+function loadMix(index) {
+  const mix = mixes[index];
+  if (!mix || mix.benchmark) return;
+  document.querySelectorAll(".pick").forEach((row) => {
+    const box = row.querySelector('input[type="checkbox"]');
+    const weight = row.querySelector(".weight");
+    const value = Math.round((mix.weights[box.value] || 0) * 100);
+    box.checked = value > 0;
+    weight.disabled = value === 0;
+    weight.value = String(value);
+  });
+  document.querySelector("#dca").checked = mix.dca;
+  document.querySelector("#amount").value = String(mix.monthly);
+  document.querySelector("#save").hidden = false;
+  document.querySelector("#save").dataset.index = String(index);
+  document.querySelector("#note").textContent = `正在改 ${mix.name}`;
 }
 
 function saveSettings() {
@@ -261,6 +292,7 @@ function ensureBenchmark(data) {
 
 function addMix(data, weights, dca = document.querySelector("#dca").checked, persist = true, monthly = monthlyAmount(), benchmark = false) {
   const note = document.querySelector("#note");
+  if (!benchmark && !checkWeights()) return;
   try {
     const clean = normalize(weights);
     const symbols = Object.keys(clean);
@@ -414,8 +446,14 @@ function hoverAt(event) {
 
 function renderTables() {
   document.querySelector("#legend").innerHTML = mixes.map((mix, index) =>
-    `<span><i class="swatch" style="background:${mix.color}"></i>${mix.name}${mix.benchmark ? "" : `<button class="remove" data-index="${index}" type="button">移除</button>`}</span>`
+    `<span data-index="${index}"><i class="swatch" style="background:${mix.color}"></i>${mix.name}${mix.benchmark ? "" : `<button class="remove" data-index="${index}" type="button">移除</button>`}</span>`
   ).join("");
+  document.querySelectorAll("#legend span").forEach((item) => {
+    item.addEventListener("click", (event) => {
+      if (event.target.closest(".remove")) return;
+      loadMix(Number(item.dataset.index));
+    });
+  });
   document.querySelectorAll(".remove").forEach((button) => {
     button.addEventListener("click", () => {
       mixes.splice(Number(button.dataset.index), 1);
@@ -456,7 +494,23 @@ async function main() {
   renderPicker(data);
   loadSettings();
   document.querySelector(".controls").addEventListener("change", saveSettings);
-  document.querySelector("#add").addEventListener("click", () => addMix(data, selectedWeights()));
+  document.querySelector("#add").addEventListener("click", () => {
+    if (!checkWeights()) return;
+    addMix(data, selectedWeights());
+  });
+  document.querySelector("#save").addEventListener("click", () => {
+    const index = Number(document.querySelector("#save").dataset.index);
+    const current = mixes[index];
+    if (!current || !checkWeights()) return;
+    const next = mixes.filter((mix) => !mix.benchmark);
+    const place = next.indexOf(current);
+    mixes.splice(index, 1);
+    addMix(data, selectedWeights(), document.querySelector("#dca").checked, true, monthlyAmount());
+    const added = mixes.pop();
+    mixes.splice(place, 0, added);
+    document.querySelector("#save").hidden = true;
+    document.querySelector("#note").textContent = "已更新這組";
+  });
   document.querySelector("#window").addEventListener("click", (event) => {
     const button = event.target.closest("button");
     if (!button) return;

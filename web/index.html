@@ -45,7 +45,9 @@
             <label class="mode"><input id="bench-dca" type="checkbox"> 基準定額</label>
             <label class="amount">金額 <input id="bench-amount" type="number" min="1" step="1000" value="10000"></label>
           </div>
+          <p id="weight-error" class="error" hidden>勾選的比例加總不能超過 100</p>
           <button id="add" type="button">加入這組</button>
+          <button id="save" type="button" hidden>儲存這組</button>
         </div>
         <div id="picker"></div>
       </aside>
