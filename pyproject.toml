@@ -1,5 +1,5 @@
 [project]
-name = "portfolio-compare"
+name = "tomtom-investment"
 version = "0.1.0"
 description = "Compare a few ETFs or stocks with yearly rebalancing."
 requires-python = ">=3.11"

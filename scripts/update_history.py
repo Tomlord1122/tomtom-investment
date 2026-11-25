@@ -25,7 +25,7 @@ FX_SYMBOL = "USDTWD=X"
 HISTORY_PATH = ROOT / "data" / "history.parquet"
 META_PATH = ROOT / "data" / "meta.json"
 CHART_URL = "https://query1.finance.yahoo.com/v8/finance/chart/{symbol}"
-USER_AGENT = "portfolio-compare/0.1 (personal research; monthly refresh)"
+USER_AGENT = "tomtom-investment/0.1 (personal research; monthly refresh)"
 
 
 def load_catalog() -> list[dict]:
