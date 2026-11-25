@@ -434,12 +434,6 @@ function renderTables() {
       <td>${money.format(mix.dca ? mix.curve.at(-1)[1] : mix.monthly * mix.rows.reduce((growth, [, value]) => growth * (1 + value), 1))}</td>
     </tr>
   `).join("");
-  const heatMix = mixes.find((mix) => !mix.benchmark);
-  document.querySelector("#heat").innerHTML = heatMix ? heatMix.rows.map(([month, value]) => {
-    const alpha = Math.min(Math.abs(value) / 0.08, 1);
-    const color = value < 0 ? `rgba(185, 28, 28, ${alpha})` : `rgba(15, 118, 110, ${alpha})`;
-    return `<i title="${month} ${pct(value)}" style="background:${color}"></i>`;
-  }).join("") : "";
   const years = [...new Set(mixes.flatMap((mix) => annualRows(mix.rows).map((row) => row.year)))].sort();
   document.querySelector("#year-head").innerHTML = `<th>年度</th>${mixes.map((mix) => `<th>${mix.name}</th>`).join("")}`;
   document.querySelector("#years").innerHTML = years.map((year) => {

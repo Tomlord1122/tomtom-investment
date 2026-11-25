@@ -206,12 +206,6 @@ button {
 
 .chart-mode { grid-template-columns: repeat(3, 1fr); margin-bottom: 10px; }
 
-h2 { margin: 22px 0 0; font-size: 14px; font-weight: 560; }
-
-#heat { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 8px; }
-
-#heat i { width: 14px; height: 14px; background: #e5e7eb; }
-
 .chart-wrap { position: relative; }
 
 canvas { width: 100%; height: auto; cursor: crosshair; }
