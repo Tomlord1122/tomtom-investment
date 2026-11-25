@@ -64,6 +64,16 @@ h1 {
 
 .pick strong { display: block; font-size: 13px; font-weight: 560; }
 
+#amount {
+  width: 88px;
+  border: 0;
+  border-bottom: 1px solid #d1d5db;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: right;
+}
+
 .weight {
   width: 52px;
   border: 0;

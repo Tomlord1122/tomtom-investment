@@ -63,6 +63,12 @@ function portfolioReturns(rows, symbols, weights) {
   });
 }
 
+function monthlyAmount() {
+  const amount = Number(document.querySelector("#amount").value);
+  if (!Number.isFinite(amount) || amount <= 0) throw new Error("每月金額要大於 0");
+  return amount;
+}
+
 function dcaValue(rows, monthly = 10000) {
   let shares = 0;
   let contributed = 0;
@@ -93,7 +99,7 @@ function summarize(rows) {
     cagr: growth ** (1 / years) - 1,
     volatility: Math.sqrt(variance * 12),
     maxDrawdown,
-    final: 10000 * growth,
+    final: null,
   };
 }
 
@@ -151,18 +157,18 @@ function renderPicker(data) {
 }
 
 function saveMixes() {
-  const saved = mixes.map(({ name, weights, dca }) => ({ name, weights, dca }));
+  const saved = mixes.map(({ name, weights, dca, monthly }) => ({ name, weights, dca, monthly }));
   localStorage.setItem(storageKey, JSON.stringify(saved));
 }
 
 function rebuildMixes(data) {
   const saved = JSON.parse(localStorage.getItem(storageKey) || "[]");
   mixes.splice(0);
-  saved.forEach((mix) => addMix(data, mix.weights, Boolean(mix.dca), false));
+  saved.forEach((mix) => addMix(data, mix.weights, Boolean(mix.dca), false, mix.monthly));
   if (!mixes.length && saved.length) document.querySelector("#note").textContent = "這個區間裡，已存的組合沒有足夠月份";
 }
 
-function addMix(data, weights, dca = document.querySelector("#dca").checked, persist = true) {
+function addMix(data, weights, dca = document.querySelector("#dca").checked, persist = true, monthly = monthlyAmount()) {
   const note = document.querySelector("#note");
   try {
     const clean = normalize(weights);
@@ -171,11 +177,12 @@ function addMix(data, weights, dca = document.querySelector("#dca").checked, per
     if (rows.length < 2) throw new Error("重疊月份不夠");
     if (mixes.length >= colors.length) throw new Error("最多五組");
     mixes.push({
-      name: label(clean) + (dca ? " · 定額" : ""),
+      name: label(clean) + (dca ? ` · 定額 ${money.format(monthly)}` : ""),
       weights: clean,
       dca,
+      monthly,
       rows,
-      curve: dca ? dcaValue(rows) : null,
+      curve: dca ? dcaValue(rows, monthly) : null,
       summary: summarize(rows),
       color: colors[mixes.length],
     });
@@ -189,7 +196,7 @@ function addMix(data, weights, dca = document.querySelector("#dca").checked, per
 
 function curveOf(mix) {
   if (mix.dca) return mix.curve.map(([, value]) => value);
-  let growth = 10000;
+  let growth = mix.monthly;
   return mix.rows.map(([, value]) => {
     growth *= 1 + value;
     return growth;
@@ -203,8 +210,8 @@ function scales() {
   return {
     curves,
     longest,
-    min: Math.min(...flat, 10000),
-    max: Math.max(...flat, 10000),
+    min: Math.min(...flat),
+    max: Math.max(...flat),
   };
 }
 
@@ -264,7 +271,7 @@ function hoverAt(event) {
     if (index >= mix.rows.length) return `<div style="color:${mix.color}">${mix.name} —</div>`;
     const month = mix.rows[index][0];
     const value = scale.curves[mixIndex][index];
-    const contributed = mix.dca ? mix.curve[index][2] : 10000;
+    const contributed = mix.dca ? mix.curve[index][2] : mix.monthly;
     const gain = value / contributed - 1;
     return `<div style="color:${mix.color}">${month} ${mix.name}<br>${money.format(value)} · ${pct(gain)}</div>`;
   });
@@ -291,7 +298,7 @@ function renderTables() {
       <td>${pct(mix.summary.cagr)}</td>
       <td>${pct(mix.summary.volatility)}</td>
       <td class="down">${pct(mix.summary.maxDrawdown)}</td>
-      <td>${money.format(mix.dca ? mix.curve.at(-1)[1] : mix.summary.final)}</td>
+      <td>${money.format(mix.dca ? mix.curve.at(-1)[1] : curveOf(mix).at(-1))}</td>
     </tr>
   `).join("");
   const years = [...new Set(mixes.flatMap((mix) => annualRows(mix.rows).map((row) => row.year)))].sort();
@@ -323,7 +330,7 @@ async function main() {
   });
   const saved = JSON.parse(localStorage.getItem(storageKey) || "[]");
   if (saved.length) {
-    saved.forEach((mix) => addMix(data, mix.weights, Boolean(mix.dca)));
+    saved.forEach((mix) => addMix(data, mix.weights, Boolean(mix.dca), true, mix.monthly || 10000));
     return;
   }
   const box = document.querySelector('input[value="0050.TW"]');
