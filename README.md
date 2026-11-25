@@ -21,6 +21,6 @@ Open `web/index.html` through a local server. `file://` cannot load `history.jso
 
 ## CI
 
-`.github/workflows/update-history.yml` runs on weekday evenings UTC, after the Taiwan close. It refreshes `data/history.parquet` and commits only when the history changed. Enable GitHub Pages from the `web/` folder on `main` if you want the page online.
+`.github/workflows/update-history.yml` runs on weekday evenings UTC, after the Taiwan close. It refreshes `data/history.parquet` and commits only when the history changed. Vercel serves `web/` with no build. The project lives on team `tomlords-projects`.
 
 Add a ticker by editing `data/catalog.json`, then run the update script or wait for the next scheduled run.

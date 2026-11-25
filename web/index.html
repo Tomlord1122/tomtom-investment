@@ -4,28 +4,27 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>投組比較</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap">
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
   <main>
     <header>
-      <div>
-        <p class="eyebrow">自己挑，每年再平衡一次</p>
-        <h1>投組比較</h1>
-      </div>
-      <p id="updated"></p>
+      <h1>投組比較</h1>
+      <p class="meta" id="updated"></p>
     </header>
     <section class="layout">
       <div id="picker"></div>
-      <div class="result">
+      <div>
         <p id="note"></p>
         <div id="stats"></div>
-        <canvas id="chart" width="720" height="280"></canvas>
+        <canvas id="chart" width="720" height="260"></canvas>
         <table>
           <thead><tr><th>年度</th><th>報酬</th></tr></thead>
           <tbody id="years"></tbody>
         </table>
-        <p class="fine">* 不滿 12 個月。台幣與美元沒有換成同一種貨幣。含息還原價，未扣稅和手續費。過去績效不代表未來。</p>
+        <p class="fine">不滿 12 個月的年度標了 *。台幣與美元沒有換成同一種貨幣。含息還原價，未扣稅和手續費。過去績效不代表未來。</p>
       </div>
     </section>
   </main>

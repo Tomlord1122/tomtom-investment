@@ -134,15 +134,14 @@ function draw(rows) {
   const min = Math.min(...points);
   const max = Math.max(...points);
   const pad = 28;
-  ctx.strokeStyle = "#d7d1c7";
+  ctx.strokeStyle = "#e5e7eb";
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.moveTo(pad, pad);
-  ctx.lineTo(pad, height - pad);
+  ctx.moveTo(pad, height - pad);
   ctx.lineTo(width - pad, height - pad);
   ctx.stroke();
-  ctx.strokeStyle = "#0f6e56";
-  ctx.lineWidth = 2.5;
+  ctx.strokeStyle = "#1f2937";
+  ctx.lineWidth = 1.5;
   ctx.beginPath();
   points.forEach((value, index) => {
     const x = pad + (index / Math.max(points.length - 1, 1)) * (width - pad * 2);
@@ -151,7 +150,7 @@ function draw(rows) {
     else ctx.lineTo(x, y);
   });
   ctx.stroke();
-  ctx.fillStyle = "#6d675f";
+  ctx.fillStyle = "#6b7280";
   ctx.font = "13px sans-serif";
   ctx.fillText(money.format(max), pad + 6, pad + 14);
   ctx.fillText(money.format(min), pad + 6, height - pad - 6);
