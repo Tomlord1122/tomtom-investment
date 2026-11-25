@@ -314,6 +314,18 @@ function draw() {
   ctx.moveTo(pad, canvas.height - pad);
   ctx.lineTo(canvas.width - pad, canvas.height - pad);
   ctx.stroke();
+  ctx.fillStyle = "#6b7280";
+  ctx.font = "12px sans-serif";
+  ctx.textAlign = "center";
+  const years = [...new Set(scale.months.map((month) => month.slice(0, 4)))];
+  let lastLabel = -Infinity;
+  years.forEach((year) => {
+    const month = scale.months.find((item) => item.startsWith(year));
+    const x = pointAt(month, scale.min, scale)[0];
+    if (x - lastLabel < 36 || x > canvas.width - pad) return;
+    lastLabel = x;
+    ctx.fillText(year, x, canvas.height - 8);
+  });
   scale.curves.forEach((curve, index) => {
     ctx.strokeStyle = shownMixes()[index].color;
     ctx.lineWidth = 1.5;
