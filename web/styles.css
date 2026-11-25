@@ -87,13 +87,10 @@ h1 {
 .weight:disabled { color: #d1d5db; }
 
 button {
-  margin-top: 14px;
   border: 0;
-  border-bottom: 1px solid #1f2937;
   background: transparent;
   color: inherit;
   font: inherit;
-  text-align: left;
   cursor: pointer;
 }
 
@@ -124,28 +121,52 @@ button {
 .controls {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin: 12px 0 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #e5e7eb;
+  gap: 8px;
+  margin: 14px 0 16px;
 }
 
-.mode, .window {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  margin-top: 0;
+.window {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.window button {
+  padding: 6px 0;
+  color: #6b7280;
   font-size: 13px;
 }
 
-button { margin-top: 0; }
+.window button + button { border-left: 1px solid #e5e7eb; }
 
-.window select {
-  border: 0;
-  border-bottom: 1px solid #9ca3af;
-  background: transparent;
-  color: inherit;
-  font: inherit;
+.window button.is-on {
+  background: #f3f4f6;
+  color: #1f2937;
+}
+
+.amount-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 32px;
+  font-size: 13px;
+}
+
+.mode, .amount {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+#add {
+  width: 100%;
+  padding: 8px 0;
+  border: 1px solid #1f2937;
+  border-radius: 8px;
+  text-align: center;
 }
 
 .chart-wrap { position: relative; }

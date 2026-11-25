@@ -27,7 +27,7 @@ function returnsFromSeries(series) {
 }
 
 function windowStart() {
-  const years = Number(document.querySelector("#window").value);
+  const years = Number(document.querySelector("#window .is-on").dataset.years);
   if (!years) return "";
   const end = document.querySelector("#updated").dataset.end;
   if (!end) return "";
@@ -322,7 +322,16 @@ async function main() {
     : "尚無資料";
   renderPicker(data);
   document.querySelector("#add").addEventListener("click", () => addMix(data, selectedWeights()));
-  document.querySelector("#window").addEventListener("change", () => rebuildMixes(data));
+  document.querySelector("#window").addEventListener("click", (event) => {
+    const button = event.target.closest("button");
+    if (!button) return;
+    document.querySelectorAll("#window button").forEach((item) => {
+      const on = item === button;
+      item.classList.toggle("is-on", on);
+      item.setAttribute("aria-pressed", String(on));
+    });
+    rebuildMixes(data);
+  });
   document.querySelector("#chart").addEventListener("mousemove", hoverAt);
   document.querySelector("#chart").addEventListener("mouseleave", () => {
     document.querySelector("#hover").hidden = true;

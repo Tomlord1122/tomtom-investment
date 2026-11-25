@@ -18,16 +18,15 @@
       <aside>
         <input id="filter" type="search" placeholder="代號或名稱" autocomplete="off">
         <div class="controls">
-          <label class="window">
-            區間
-            <select id="window">
-              <option value="0">全部</option>
-              <option value="5">近 5 年</option>
-              <option value="10">近 10 年</option>
-            </select>
-          </label>
-          <label class="mode"><input id="dca" type="checkbox"> 定期定額</label>
-          <label class="mode">每月 <input id="amount" type="number" min="1" step="1000" value="10000"></label>
+          <div class="window" id="window" role="group" aria-label="區間">
+            <button type="button" data-years="0" class="is-on" aria-pressed="true">全部</button>
+            <button type="button" data-years="5" aria-pressed="false">5 年</button>
+            <button type="button" data-years="10" aria-pressed="false">10 年</button>
+          </div>
+          <div class="amount-row">
+            <label class="mode"><input id="dca" type="checkbox"> 定期定額</label>
+            <label class="amount">每月 <input id="amount" type="number" min="1" step="1000" value="10000"></label>
+          </div>
           <button id="add" type="button">加入這組</button>
         </div>
         <div id="picker"></div>
