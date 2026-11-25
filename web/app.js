@@ -1,6 +1,7 @@
 const money = new Intl.NumberFormat("zh-TW", { maximumFractionDigits: 0 });
 const colors = ["#1f2937", "#0f766e", "#b45309", "#1d4ed8", "#9f1239"];
 const storageKey = "portfolio-compare-mixes-v2";
+const settingsKey = "portfolio-compare-settings";
 const mixes = [];
 const pad = 28;
 
@@ -183,6 +184,37 @@ function renderPicker(data) {
       row.classList.toggle("is-hidden", query !== "" && !row.dataset.find.includes(query));
     });
   });
+}
+
+function saveSettings() {
+  localStorage.setItem(settingsKey, JSON.stringify({
+    amount: document.querySelector("#amount").value,
+    dca: document.querySelector("#dca").checked,
+    benchAmount: document.querySelector("#bench-amount").value,
+    benchDca: document.querySelector("#bench-dca").checked,
+    rebalance: document.querySelector("#rebalance").value,
+    years: document.querySelector("#window .is-on").dataset.years,
+    from: document.querySelector("#from").value,
+    to: document.querySelector("#to").value,
+  }));
+}
+
+function loadSettings() {
+  const saved = JSON.parse(localStorage.getItem(settingsKey) || "null");
+  if (!saved) return;
+  document.querySelector("#amount").value = saved.amount ?? document.querySelector("#amount").value;
+  document.querySelector("#dca").checked = Boolean(saved.dca);
+  document.querySelector("#bench-amount").value = saved.benchAmount ?? document.querySelector("#bench-amount").value;
+  document.querySelector("#bench-dca").checked = Boolean(saved.benchDca);
+  document.querySelector("#rebalance").value = saved.rebalance || document.querySelector("#rebalance").value;
+  document.querySelector("#from").value = saved.from || "";
+  document.querySelector("#to").value = saved.to || "";
+  document.querySelectorAll("#window button").forEach((item) => {
+    const on = item.dataset.years === (saved.years || "0");
+    item.classList.toggle("is-on", on);
+    item.setAttribute("aria-pressed", String(on));
+  });
+  document.querySelector(".dates").hidden = saved.years !== "custom";
 }
 
 function saveMixes() {
@@ -428,6 +460,8 @@ async function main() {
     ? `資料更新 ${data.updated_at.slice(0, 10)}`
     : "尚無資料";
   renderPicker(data);
+  loadSettings();
+  document.querySelector(".controls").addEventListener("change", saveSettings);
   document.querySelector("#add").addEventListener("click", () => addMix(data, selectedWeights()));
   document.querySelector("#window").addEventListener("click", (event) => {
     const button = event.target.closest("button");
@@ -438,6 +472,7 @@ async function main() {
       item.setAttribute("aria-pressed", String(on));
     });
     document.querySelector(".dates").hidden = button.dataset.years !== "custom";
+    saveSettings();
     rebuildMixes(data);
   });
   document.querySelector("#rebalance").addEventListener("change", () => rebuildMixes(data));
