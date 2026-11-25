@@ -22,9 +22,14 @@ def main() -> None:
     series = {}
     for symbol, frame in history.groupby("symbol"):
         ordered = frame.sort_values("month")
+        usd = ordered["usd_twd"] if "usd_twd" in ordered else None
+        prices = ordered["adj_close"]
+        if not str(symbol).endswith((".TW", ".TWO")) and usd is not None:
+            prices = prices * usd
         series[symbol] = [
             [month, round(float(price), 6)]
-            for month, price in zip(ordered["month"], ordered["adj_close"])
+            for month, price in zip(ordered["month"], prices)
+            if pd.notna(price)
         ]
     payload = {
         "updated_at": meta.get("updated_at"),

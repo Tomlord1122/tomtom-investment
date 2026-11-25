@@ -21,6 +21,7 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
 CATALOG_PATH = ROOT / "data" / "catalog.json"
+FX_SYMBOL = "USDTWD=X"
 HISTORY_PATH = ROOT / "data" / "history.parquet"
 META_PATH = ROOT / "data" / "meta.json"
 CHART_URL = "https://query1.finance.yahoo.com/v8/finance/chart/{symbol}"
@@ -228,6 +229,8 @@ def write_outputs(history: pd.DataFrame, statuses: list[dict]) -> None:
 
 def main() -> None:
     history, statuses = refresh(load_catalog())
+    fx = month_ends(fetch_chart(FX_SYMBOL))[["month", "adj_close"]].rename(columns={"adj_close": "usd_twd"})
+    history = history.merge(fx, on="month", how="left")
     write_outputs(history, statuses)
     failed = [item["symbol"] for item in statuses if not item["ok"]]
     if failed:
