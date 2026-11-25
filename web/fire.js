@@ -24,6 +24,7 @@ function read() {
     spend: Number(document.querySelector("#spend").value) || 0,
     rate: Number(document.querySelector("#rate").value) / 100,
     swr: Number(document.querySelector("#swr").value) / 100,
+    horizon: Number(document.querySelector("#horizon").value) || 0,
   };
 }
 
@@ -32,13 +33,13 @@ function render() {
   localStorage.setItem(key, JSON.stringify(input));
   const target = input.swr > 0 ? input.spend / input.swr : Infinity;
   const years = yearsTo(input.now, input.save, target, input.rate);
-  const coast = coastNumber(target, input.rate, 10);
+  const coast = coastNumber(target, input.rate, input.horizon);
   const gap = Math.max(target - input.now, 0);
   document.querySelector("#result").innerHTML = `
     <div><small>FIRE 目標</small><strong>${money.format(target)}</strong></div>
     <div><small>還差</small><strong>${money.format(gap)}</strong></div>
     <div><small>達標年數</small><strong>${Number.isFinite(years) ? `${years} 年` : "到不了"}</strong></div>
-    <div><small>10 年後 Coast</small><strong>${money.format(coast)}</strong></div>
+    <div><small>${input.horizon} 年 Coast 門檻</small><strong>${money.format(coast)}</strong></div>
   `;
 }
 
@@ -49,6 +50,7 @@ if (saved) {
   document.querySelector("#spend").value = saved.spend;
   document.querySelector("#rate").value = saved.rate * 100;
   document.querySelector("#swr").value = saved.swr * 100;
+  document.querySelector("#horizon").value = saved.horizon ?? 10;
 }
 document.querySelector("#fire").addEventListener("input", render);
 render();
