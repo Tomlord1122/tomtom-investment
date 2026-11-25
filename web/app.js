@@ -195,29 +195,38 @@ function addMix(data, weights, dca = document.querySelector("#dca").checked, per
 }
 
 function curveOf(mix) {
-  if (mix.dca) return mix.curve.map(([, value]) => value);
   let growth = mix.monthly;
-  return mix.rows.map(([, value]) => {
-    growth *= 1 + value;
-    return growth;
-  });
+  const values = mix.dca
+    ? mix.curve.map(([, value]) => value)
+    : mix.rows.map(([, value]) => {
+      growth *= 1 + value;
+      return growth;
+    });
+  return new Map(mix.rows.map(([month], index) => [month, values[index]]));
+}
+
+function monthIndex(month) {
+  const [year, part] = month.split("-").map(Number);
+  return year * 12 + part;
 }
 
 function scales() {
   const curves = mixes.map(curveOf);
-  const longest = Math.max(...curves.map((points) => points.length), 1);
-  const flat = curves.flat();
+  const months = [...new Set(curves.flatMap((curve) => [...curve.keys()]))].sort();
+  const flat = curves.flatMap((curve) => [...curve.values()]);
   return {
     curves,
-    longest,
+    months,
     min: Math.min(...flat),
     max: Math.max(...flat),
   };
 }
 
-function pointAt(length, index, value, scale) {
+function pointAt(month, value, scale) {
   const canvas = document.querySelector("#chart");
-  const x = pad + (index / Math.max(scale.longest - 1, 1)) * (canvas.width - pad * 2);
+  const start = monthIndex(scale.months[0]);
+  const span = Math.max(monthIndex(scale.months.at(-1)) - start, 1);
+  const x = pad + ((monthIndex(month) - start) / span) * (canvas.width - pad * 2);
   const y = pad + (1 - (value - scale.min) / Math.max(scale.max - scale.min, 1)) * (canvas.height - pad * 2);
   return [x, y];
 }
@@ -232,14 +241,17 @@ function draw() {
   ctx.moveTo(pad, canvas.height - pad);
   ctx.lineTo(canvas.width - pad, canvas.height - pad);
   ctx.stroke();
-  scale.curves.forEach((points, index) => {
+  scale.curves.forEach((curve, index) => {
     ctx.strokeStyle = mixes[index].color;
     ctx.lineWidth = 1.5;
     ctx.beginPath();
-    points.forEach((value, point) => {
-      const [x, y] = pointAt(points.length, point, value, scale);
-      if (point === 0) ctx.moveTo(x, y);
+    let started = false;
+    scale.months.forEach((month) => {
+      if (!curve.has(month)) return;
+      const [x, y] = pointAt(month, curve.get(month), scale);
+      if (!started) ctx.moveTo(x, y);
       else ctx.lineTo(x, y);
+      started = true;
     });
     ctx.stroke();
   });
@@ -248,30 +260,29 @@ function draw() {
 
 function hoverAt(event) {
   const box = document.querySelector("#hover");
-  if (!mixes.length) return;
+  if (!mixes.length || !scales().months.length) return;
   const canvas = document.querySelector("#chart");
   const rect = canvas.getBoundingClientRect();
   const x = (event.clientX - rect.left) * (canvas.width / rect.width);
   const scale = scales();
-  const index = Math.round(((x - pad) / (canvas.width - pad * 2)) * Math.max(scale.longest - 1, 1));
-  if (index < 0 || index >= scale.longest) {
-    box.hidden = true;
-    draw();
-    return;
-  }
+  const start = monthIndex(scale.months[0]);
+  const span = Math.max(monthIndex(scale.months.at(-1)) - start, 1);
+  const hovered = Math.round(start + ((x - pad) / (canvas.width - pad * 2)) * span);
+  const month = scale.months.reduce((best, item) => (
+    Math.abs(monthIndex(item) - hovered) < Math.abs(monthIndex(best) - hovered) ? item : best
+  ));
   draw();
   const ctx = canvas.getContext("2d");
-  const lineX = pointAt(scale.longest, index, scale.min, scale)[0];
+  const lineX = pointAt(month, scale.min, scale)[0];
   ctx.strokeStyle = "#d1d5db";
   ctx.beginPath();
   ctx.moveTo(lineX, pad);
   ctx.lineTo(lineX, canvas.height - pad);
   ctx.stroke();
   const rows = mixes.map((mix, mixIndex) => {
-    if (index >= mix.rows.length) return `<div style="color:${mix.color}">${mix.name} —</div>`;
-    const month = mix.rows[index][0];
-    const value = scale.curves[mixIndex][index];
-    const contributed = mix.dca ? mix.curve[index][2] : mix.monthly;
+    const value = scale.curves[mixIndex].get(month);
+    if (value == null) return `<div style="color:${mix.color}">${month} ${mix.name} —</div>`;
+    const contributed = mix.dca ? mix.curve.find(([item]) => item === month)[2] : mix.monthly;
     const gain = value / contributed - 1;
     return `<div style="color:${mix.color}">${month} ${mix.name}<br>${money.format(value)} · ${pct(gain)}</div>`;
   });
