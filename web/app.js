@@ -1,4 +1,6 @@
 const money = new Intl.NumberFormat("zh-TW", { maximumFractionDigits: 0 });
+const colors = ["#1f2937", "#0f766e", "#b45309", "#1d4ed8", "#9f1239"];
+const mixes = [];
 
 function pct(value) {
   if (value == null || Number.isNaN(value)) return "—";
@@ -61,11 +63,10 @@ function summarize(rows) {
   });
   const years = rows.length / 12;
   const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
-  const variance = values.reduce((sum, value) => sum + (value - mean) ** 2, 0) / (values.length - 1);
+  const variance = values.reduce((sum, value) => sum + (value - mean) ** 2, 0) / Math.max(values.length - 1, 1);
   return {
     start: rows[0][0],
     end: rows[rows.length - 1][0],
-    months: rows.length,
     cagr: growth ** (1 / years) - 1,
     volatility: Math.sqrt(variance * 12),
     maxDrawdown,
@@ -79,35 +80,17 @@ function annualRows(rows) {
     const year = month.slice(0, 4);
     grouped.set(year, [...(grouped.get(year) || []), value]);
   });
-  return [...grouped.entries()].map(([year, values]) => {
-    const total = values.reduce((product, value) => product * (1 + value), 1) - 1;
-    return { year, total, partial: values.length < 12 };
-  });
+  return [...grouped.entries()].map(([year, values]) => ({
+    year,
+    total: values.reduce((product, value) => product * (1 + value), 1) - 1,
+    partial: values.length < 12,
+  }));
 }
 
-function renderPicker(data) {
-  const picker = document.querySelector("#picker");
-  picker.innerHTML = "";
-  data.symbols.forEach((item) => {
-    const row = document.createElement("label");
-    row.className = "pick";
-    row.innerHTML = `
-      <input type="checkbox" value="${item.symbol}">
-      <span>
-        <strong>${item.symbol}</strong>
-        <small>${item.name} · ${item.market}</small>
-      </span>
-      <input class="weight" type="number" min="0" max="100" value="50" disabled>
-    `;
-    const box = row.querySelector('input[type="checkbox"]');
-    const weight = row.querySelector(".weight");
-    box.addEventListener("change", () => {
-      weight.disabled = !box.checked;
-      compare(data);
-    });
-    weight.addEventListener("input", () => compare(data));
-    picker.appendChild(row);
-  });
+function label(weights) {
+  return Object.entries(weights)
+    .map(([symbol, weight]) => `${symbol.replace(".TW", "").replace(".TWO", "")} ${Math.round(weight * 100)}`)
+    .join(" / ");
 }
 
 function selectedWeights() {
@@ -120,83 +103,122 @@ function selectedWeights() {
   return weights;
 }
 
-function draw(rows) {
+function renderPicker(data) {
+  const picker = document.querySelector("#picker");
+  data.symbols.forEach((item) => {
+    const row = document.createElement("label");
+    row.className = "pick";
+    row.innerHTML = `
+      <input type="checkbox" value="${item.symbol}">
+      <span><strong>${item.symbol}</strong><small>${item.name}</small></span>
+      <input class="weight" type="number" min="0" max="100" value="50" disabled>
+    `;
+    const box = row.querySelector('input[type="checkbox"]');
+    const weight = row.querySelector(".weight");
+    box.addEventListener("change", () => { weight.disabled = !box.checked; });
+    picker.appendChild(row);
+  });
+}
+
+function addMix(data) {
+  const note = document.querySelector("#note");
+  try {
+    const weights = normalize(selectedWeights());
+    const symbols = Object.keys(weights);
+    const rows = portfolioReturns(overlap(symbols, data.series), symbols, weights);
+    if (rows.length < 2) throw new Error("重疊月份不夠");
+    if (mixes.length >= colors.length) throw new Error("最多五組");
+    mixes.push({ name: label(weights), rows, summary: summarize(rows), color: colors[mixes.length] });
+    note.textContent = "";
+    draw();
+  } catch (error) {
+    note.textContent = error.message;
+  }
+}
+
+function draw() {
   const canvas = document.querySelector("#chart");
   const ctx = canvas.getContext("2d");
   const width = canvas.width;
   const height = canvas.height;
-  ctx.clearRect(0, 0, width, height);
-  let growth = 10000;
-  const points = rows.map(([, value]) => {
-    growth *= 1 + value;
-    return growth;
-  });
-  const min = Math.min(...points);
-  const max = Math.max(...points);
   const pad = 28;
+  ctx.clearRect(0, 0, width, height);
+  const curves = mixes.map((mix) => {
+    let growth = 10000;
+    return mix.rows.map(([, value]) => {
+      growth *= 1 + value;
+      return growth;
+    });
+  });
+  const flat = curves.flat();
+  const min = Math.min(...flat, 10000);
+  const max = Math.max(...flat, 10000);
   ctx.strokeStyle = "#e5e7eb";
-  ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.moveTo(pad, height - pad);
   ctx.lineTo(width - pad, height - pad);
   ctx.stroke();
-  ctx.strokeStyle = "#1f2937";
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  points.forEach((value, index) => {
-    const x = pad + (index / Math.max(points.length - 1, 1)) * (width - pad * 2);
-    const y = pad + (1 - (value - min) / Math.max(max - min, 1)) * (height - pad * 2);
-    if (index === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
+  curves.forEach((points, index) => {
+    ctx.strokeStyle = mixes[index].color;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    points.forEach((value, point) => {
+      const x = pad + (point / Math.max(points.length - 1, 1)) * (width - pad * 2);
+      const y = pad + (1 - (value - min) / Math.max(max - min, 1)) * (height - pad * 2);
+      if (point === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
   });
-  ctx.stroke();
-  ctx.fillStyle = "#6b7280";
-  ctx.font = "13px sans-serif";
-  ctx.fillText(money.format(max), pad + 6, pad + 14);
-  ctx.fillText(money.format(min), pad + 6, height - pad - 6);
+  renderTables();
 }
 
-function compare(data) {
-  const note = document.querySelector("#note");
-  const stats = document.querySelector("#stats");
-  const years = document.querySelector("#years");
-  try {
-    const weights = selectedWeights();
-    const symbols = Object.keys(weights);
-    const rows = portfolioReturns(overlap(symbols, data.series), symbols, weights);
-    if (rows.length < 2) throw new Error("重疊月份不夠");
-    const summary = summarize(rows);
-    note.textContent = `${summary.start} → ${summary.end} · ${summary.months} 個月 · 每年 1 月再平衡 · 1 萬元`;
-    stats.innerHTML = [
-      ["年化", pct(summary.cagr)],
-      ["波動", pct(summary.volatility)],
-      ["最大回撤", pct(summary.maxDrawdown)],
-      ["期末", money.format(summary.final)],
-    ].map(([label, value]) => `<div><small>${label}</small><strong>${value}</strong></div>`).join("");
-    years.innerHTML = annualRows(rows)
-      .map((row) => `<tr><td>${row.year}${row.partial ? "*" : ""}</td><td class="${row.total < 0 ? "down" : "up"}">${pct(row.total)}</td></tr>`)
-      .join("");
-    draw(rows);
-  } catch (error) {
-    note.textContent = error.message;
-    stats.innerHTML = "";
-    years.innerHTML = "";
-  }
+function renderTables() {
+  document.querySelector("#legend").innerHTML = mixes.map((mix, index) =>
+    `<span><i class="swatch" style="background:${mix.color}"></i>${mix.name}<button class="remove" data-index="${index}" type="button">移除</button></span>`
+  ).join("");
+  document.querySelectorAll(".remove").forEach((button) => {
+    button.addEventListener("click", () => {
+      mixes.splice(Number(button.dataset.index), 1);
+      mixes.forEach((mix, index) => { mix.color = colors[index]; });
+      draw();
+    });
+  });
+  document.querySelector("#stats").innerHTML = mixes.map((mix) => `
+    <tr>
+      <td>${mix.name}</td>
+      <td>${mix.summary.start}–${mix.summary.end}</td>
+      <td>${pct(mix.summary.cagr)}</td>
+      <td>${pct(mix.summary.volatility)}</td>
+      <td class="down">${pct(mix.summary.maxDrawdown)}</td>
+      <td>${money.format(mix.summary.final)}</td>
+    </tr>
+  `).join("");
+  const years = [...new Set(mixes.flatMap((mix) => annualRows(mix.rows).map((row) => row.year)))].sort();
+  document.querySelector("#year-head").innerHTML = `<th>年度</th>${mixes.map((mix) => `<th>${mix.name}</th>`).join("")}`;
+  document.querySelector("#years").innerHTML = years.map((year) => {
+    const cells = mixes.map((mix) => {
+      const row = annualRows(mix.rows).find((item) => item.year === year);
+      if (!row) return "<td>—</td>";
+      return `<td class="${row.total < 0 ? "down" : "up"}">${pct(row.total)}${row.partial ? "*" : ""}</td>`;
+    }).join("");
+    return `<tr><td>${year}</td>${cells}</tr>`;
+  }).join("");
 }
 
 async function main() {
-  const response = await fetch("./history.json");
-  const data = await response.json();
+  const data = await (await fetch("./history.json")).json();
   document.querySelector("#updated").textContent = data.updated_at
     ? `資料更新 ${data.updated_at.slice(0, 10)}`
     : "尚無資料";
   renderPicker(data);
+  document.querySelector("#add").addEventListener("click", () => addMix(data));
   ["0050.TW", "00679B.TWO"].forEach((symbol) => {
     const box = document.querySelector(`input[value="${symbol}"]`);
     box.checked = true;
     box.closest(".pick").querySelector(".weight").disabled = false;
   });
-  compare(data);
+  addMix(data);
 }
 
 main();
