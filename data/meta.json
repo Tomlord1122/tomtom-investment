@@ -1,0 +1,90 @@
+{
+  "updated_at": "2026-11-25T02:45:33Z",
+  "source": "Yahoo Finance chart API, monthly adjusted close",
+  "symbols": [
+    {
+      "symbol": "0050.TW",
+      "ok": true,
+      "months": 216,
+      "start": "2008-12",
+      "end": "2026-11"
+    },
+    {
+      "symbol": "00646.TW",
+      "ok": true,
+      "months": 132,
+      "start": "2015-12",
+      "end": "2026-11"
+    },
+    {
+      "symbol": "00679B.TWO",
+      "ok": true,
+      "months": 119,
+      "start": "2017-01",
+      "end": "2026-11"
+    },
+    {
+      "symbol": "00719B.TWO",
+      "ok": true,
+      "months": 107,
+      "start": "2018-01",
+      "end": "2026-11"
+    },
+    {
+      "symbol": "00720B.TWO",
+      "ok": true,
+      "months": 107,
+      "start": "2018-01",
+      "end": "2026-11"
+    },
+    {
+      "symbol": "VTI",
+      "ok": true,
+      "months": 305,
+      "start": "2001-07",
+      "end": "2026-11"
+    },
+    {
+      "symbol": "VOO",
+      "ok": true,
+      "months": 194,
+      "start": "2010-10",
+      "end": "2026-11"
+    },
+    {
+      "symbol": "VT",
+      "ok": true,
+      "months": 221,
+      "start": "2008-07",
+      "end": "2026-11"
+    },
+    {
+      "symbol": "BND",
+      "ok": true,
+      "months": 235,
+      "start": "2007-05",
+      "end": "2026-11"
+    },
+    {
+      "symbol": "TIP",
+      "ok": true,
+      "months": 275,
+      "start": "2004-01",
+      "end": "2026-11"
+    },
+    {
+      "symbol": "TLT",
+      "ok": true,
+      "months": 292,
+      "start": "2002-08",
+      "end": "2026-11"
+    },
+    {
+      "symbol": "2330.TW",
+      "ok": true,
+      "months": 323,
+      "start": "2000-01",
+      "end": "2026-11"
+    }
+  ]
+}

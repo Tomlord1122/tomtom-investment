@@ -1,0 +1,16 @@
+{
+  "symbols": [
+    {"symbol": "0050.TW", "name": "元大台灣50", "market": "TW", "kind": "etf"},
+    {"symbol": "00646.TW", "name": "元大S&P500", "market": "TW", "kind": "etf"},
+    {"symbol": "00679B.TWO", "name": "元大美債20年", "market": "TW", "kind": "etf"},
+    {"symbol": "00719B.TWO", "name": "元大美債1-3", "market": "TW", "kind": "etf"},
+    {"symbol": "00720B.TWO", "name": "元大投資級公司債", "market": "TW", "kind": "etf"},
+    {"symbol": "VTI", "name": "Vanguard Total Stock Market", "market": "US", "kind": "etf"},
+    {"symbol": "VOO", "name": "Vanguard S&P 500", "market": "US", "kind": "etf"},
+    {"symbol": "VT", "name": "Vanguard Total World Stock", "market": "US", "kind": "etf"},
+    {"symbol": "BND", "name": "Vanguard Total Bond Market", "market": "US", "kind": "etf"},
+    {"symbol": "TIP", "name": "iShares TIPS Bond", "market": "US", "kind": "etf"},
+    {"symbol": "TLT", "name": "iShares 20+ Year Treasury", "market": "US", "kind": "etf"},
+    {"symbol": "2330.TW", "name": "台積電", "market": "TW", "kind": "stock"}
+  ]
+}
