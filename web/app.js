@@ -382,7 +382,7 @@ function renderTables() {
       <td>${pct(mix.summary.cagr)}</td>
       <td>${pct(mix.summary.volatility)}</td>
       <td class="down">${pct(mix.summary.maxDrawdown)}</td>
-      <td>${money.format(mix.dca ? mix.curve.at(-1)[1] : curveOf(mix).at(-1))}</td>
+      <td>${money.format(mix.dca ? mix.curve.at(-1)[1] : mix.monthly * mix.rows.reduce((growth, [, value]) => growth * (1 + value), 1))}</td>
     </tr>
   `).join("");
   const comparable = mixes.filter((mix) => !mix.benchmark);
