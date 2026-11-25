@@ -193,6 +193,7 @@ button {
 }
 
 .dates { display: flex; gap: 8px; }
+.dates[hidden] { display: none; }
 
 .dates input, #rebalance {
   border: 0;

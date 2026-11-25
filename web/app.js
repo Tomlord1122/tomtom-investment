@@ -30,7 +30,7 @@ function selectedRange() {
   const preset = document.querySelector("#window .is-on").dataset.years;
   const end = document.querySelector("#to").value || document.querySelector("#updated").dataset.end || "";
   if (preset === "custom") return [document.querySelector("#from").value, end];
-  if (!preset || !end) return ["", end];
+  if (!preset || preset === "0" || !end) return ["", end];
   const [year, month] = end.split("-").map(Number);
   const start = new Date(Date.UTC(year - Number(preset), month - 1, 1));
   return [start.toISOString().slice(0, 7), end];
