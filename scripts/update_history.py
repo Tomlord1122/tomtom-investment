@@ -203,6 +203,11 @@ def refresh(symbols: list[dict], pause_sec: float = 0.4) -> tuple[pd.DataFrame, 
             print(f"FAIL {symbol}: {exc}", file=sys.stderr)
             continue
         frame.insert(0, "symbol", symbol)
+        if HISTORY_PATH.exists():
+            saved = pd.read_parquet(HISTORY_PATH)
+            saved = saved[saved["symbol"] == symbol]
+            fresh = frame[~frame["month"].isin(saved["month"])]
+            frame = pd.concat([saved, fresh], ignore_index=True).drop_duplicates(["symbol", "month"]).sort_values("month")
         frames.append(frame)
         statuses.append(
             {
@@ -217,6 +222,10 @@ def refresh(symbols: list[dict], pause_sec: float = 0.4) -> tuple[pd.DataFrame, 
         elapsed = time.time() - started
         if elapsed < pause_sec:
             time.sleep(pause_sec - elapsed)
+    if HISTORY_PATH.exists():
+        saved = pd.read_parquet(HISTORY_PATH)
+        failed = {item["symbol"] for item in statuses if not item["ok"]}
+        frames.append(saved[saved["symbol"].isin(failed)])
     if not frames:
         raise SystemExit("every symbol failed")
     history = pd.concat(frames, ignore_index=True)
@@ -236,6 +245,7 @@ def write_outputs(history: pd.DataFrame, statuses: list[dict]) -> None:
 
 def main() -> None:
     history, statuses = refresh(load_catalog())
+    history = history.drop(columns=["usd_twd"], errors="ignore")
     fx = month_ends(fetch_chart(FX_SYMBOL))[["month", "adj_close"]].rename(columns={"adj_close": "usd_twd"})
     history = history.merge(fx, on="month", how="left")
     history.loc[~history["usd_twd"].between(20, 45), "usd_twd"] = pd.NA
