@@ -1,6 +1,6 @@
 const money = new Intl.NumberFormat("zh-TW", { maximumFractionDigits: 0 });
 const colors = ["#1f2937", "#0f766e", "#b45309", "#1d4ed8", "#9f1239"];
-const storageKey = "portfolio-compare-mixes";
+const storageKey = "portfolio-compare-mixes-v2";
 const mixes = [];
 const pad = 28;
 
@@ -326,12 +326,12 @@ async function main() {
     saved.forEach((mix) => addMix(data, mix.weights, Boolean(mix.dca)));
     return;
   }
-  ["0050.TW", "00679B.TWO"].forEach((symbol) => {
-    const box = document.querySelector(`input[value="${symbol}"]`);
-    box.checked = true;
-    box.closest(".pick").querySelector(".weight").disabled = false;
-  });
-  addMix(data, selectedWeights(), false);
+  const box = document.querySelector('input[value="0050.TW"]');
+  const weight = box.closest(".pick").querySelector(".weight");
+  box.checked = true;
+  weight.disabled = false;
+  weight.value = "100";
+  addMix(data, { "0050.TW": 100 }, false);
 }
 
 main();
