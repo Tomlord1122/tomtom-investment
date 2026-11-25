@@ -60,6 +60,8 @@ h1 {
   border-bottom: 1px solid #e5e7eb;
 }
 
+.pick.is-hidden { display: none; }
+
 .pick strong { display: block; font-size: 13px; font-weight: 560; }
 
 .weight {
@@ -109,10 +111,20 @@ button {
   cursor: pointer;
 }
 
-.mode {
-  display: block;
+.mode, .window {
+  display: flex;
+  gap: 8px;
+  align-items: center;
   margin-top: 14px;
   font-size: 13px;
+}
+
+.window select {
+  border: 0;
+  border-bottom: 1px solid #9ca3af;
+  background: transparent;
+  color: inherit;
+  font: inherit;
 }
 
 .chart-wrap { position: relative; }

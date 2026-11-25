@@ -18,6 +18,14 @@
       <aside>
         <input id="filter" type="search" placeholder="代號或名稱" autocomplete="off">
         <div id="picker"></div>
+        <label class="window">
+          區間
+          <select id="window">
+            <option value="0">全部</option>
+            <option value="5">近 5 年</option>
+            <option value="10">近 10 年</option>
+          </select>
+        </label>
         <label class="mode"><input id="dca" type="checkbox"> 定期定額，每月 1 萬</label>
         <button id="add" type="button">加入這組</button>
       </aside>
@@ -45,7 +53,7 @@
           <thead><tr id="year-head"><th>年度</th></tr></thead>
           <tbody id="years"></tbody>
         </table>
-        <p class="fine">各組用自己的重疊月份，起點都是 1 萬。不滿 12 個月的年度標了 *。台幣與美元沒有換成同一種貨幣。含息還原價，未扣稅和手續費。過去績效不代表未來。</p>
+        <p class="fine">區間從最新月份往回切，各組仍要自己的標的都有資料。起點都是 1 萬。不滿 12 個月的年度標了 *。台幣與美元沒有換成同一種貨幣。含息還原價，未扣稅和手續費。過去績效不代表未來。</p>
       </div>
     </section>
   </main>

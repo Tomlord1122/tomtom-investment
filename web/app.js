@@ -26,9 +26,20 @@ function returnsFromSeries(series) {
   return out;
 }
 
+function windowStart() {
+  const years = Number(document.querySelector("#window").value);
+  if (!years) return "";
+  const end = document.querySelector("#updated").dataset.end;
+  if (!end) return "";
+  const [year, month] = end.split("-").map(Number);
+  const start = new Date(Date.UTC(year - years, month - 1, 1));
+  return start.toISOString().slice(0, 7);
+}
+
 function overlap(selected, series) {
   const maps = selected.map((symbol) => new Map(returnsFromSeries(series[symbol])));
-  const months = [...maps[0].keys()].filter((month) => maps.every((item) => item.has(month)));
+  const start = windowStart();
+  const months = [...maps[0].keys()].filter((month) => month >= start && maps.every((item) => item.has(month)));
   months.sort();
   return months.map((month) => [month, selected.map((symbol, index) => maps[index].get(month))]);
 }
@@ -134,7 +145,7 @@ function renderPicker(data) {
   document.querySelector("#filter").addEventListener("input", (event) => {
     const query = event.target.value.trim().toLowerCase();
     document.querySelectorAll(".pick").forEach((row) => {
-      row.hidden = query !== "" && !row.dataset.find.includes(query);
+      row.classList.toggle("is-hidden", query !== "" && !row.dataset.find.includes(query));
     });
   });
 }
@@ -144,7 +155,14 @@ function saveMixes() {
   localStorage.setItem(storageKey, JSON.stringify(saved));
 }
 
-function addMix(data, weights, dca = document.querySelector("#dca").checked) {
+function rebuildMixes(data) {
+  const saved = JSON.parse(localStorage.getItem(storageKey) || "[]");
+  mixes.splice(0);
+  saved.forEach((mix) => addMix(data, mix.weights, Boolean(mix.dca), false));
+  if (!mixes.length && saved.length) document.querySelector("#note").textContent = "這個區間裡，已存的組合沒有足夠月份";
+}
+
+function addMix(data, weights, dca = document.querySelector("#dca").checked, persist = true) {
   const note = document.querySelector("#note");
   try {
     const clean = normalize(weights);
@@ -162,7 +180,7 @@ function addMix(data, weights, dca = document.querySelector("#dca").checked) {
       color: colors[mixes.length],
     });
     note.textContent = "";
-    saveMixes();
+    if (persist) saveMixes();
     draw();
   } catch (error) {
     note.textContent = error.message;
@@ -290,11 +308,14 @@ function renderTables() {
 
 async function main() {
   const data = await (await fetch("./history.json")).json();
+  const ends = Object.values(data.series).map((series) => series.at(-1)[0]);
+  document.querySelector("#updated").dataset.end = ends.sort().at(-1) || "";
   document.querySelector("#updated").textContent = data.updated_at
     ? `資料更新 ${data.updated_at.slice(0, 10)}`
     : "尚無資料";
   renderPicker(data);
   document.querySelector("#add").addEventListener("click", () => addMix(data, selectedWeights()));
+  document.querySelector("#window").addEventListener("change", () => rebuildMixes(data));
   document.querySelector("#chart").addEventListener("mousemove", hoverAt);
   document.querySelector("#chart").addEventListener("mouseleave", () => {
     document.querySelector("#hover").hidden = true;
