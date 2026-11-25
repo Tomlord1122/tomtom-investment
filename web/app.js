@@ -219,7 +219,27 @@ function rebuildMixes(data) {
 function ensureBenchmark(data) {
   const kept = mixes.filter((mix) => !mix.benchmark);
   mixes.splice(0, mixes.length, ...kept);
-  addMix(data, { "0050.TW": 100 }, false, false, 10000, true);
+  const lead = kept[0];
+  if (!lead) return;
+  const sameMonths = (rows) => rows.filter(([month]) => lead.rows.some(([item]) => item === month));
+  const rows = sameMonths(portfolioReturns(
+    overlap(["0050.TW"], data.series),
+    ["0050.TW"],
+    { "0050.TW": 1 },
+    "none",
+  ));
+  if (rows.length < 2) return;
+  mixes.push({
+    name: `基準 0050${lead.dca ? ` · 定額 ${money.format(lead.monthly)}` : ""}`,
+    weights: { "0050.TW": 1 },
+    benchmark: true,
+    dca: lead.dca,
+    monthly: lead.monthly,
+    rows,
+    curve: lead.dca ? dcaValue(rows, lead.monthly) : null,
+    summary: summarize(rows),
+    color: "#9ca3af",
+  });
 }
 
 function addMix(data, weights, dca = document.querySelector("#dca").checked, persist = true, monthly = monthlyAmount(), benchmark = false) {
