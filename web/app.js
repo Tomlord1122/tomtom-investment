@@ -1,6 +1,8 @@
 const money = new Intl.NumberFormat("zh-TW", { maximumFractionDigits: 0 });
 const colors = ["#1f2937", "#0f766e", "#b45309", "#1d4ed8", "#9f1239"];
+const storageKey = "portfolio-compare-mixes";
 const mixes = [];
+const pad = 28;
 
 function pct(value) {
   if (value == null || Number.isNaN(value)) return "—";
@@ -47,6 +49,16 @@ function portfolioReturns(rows, symbols, weights) {
     const total = grown.reduce((sum, value) => sum + value, 0);
     held = grown.map((value) => value / total);
     return [month, portfolio];
+  });
+}
+
+function dcaValue(rows, monthly = 10000) {
+  let shares = 0;
+  let contributed = 0;
+  return rows.map(([month, value]) => {
+    shares = (shares + monthly) * (1 + value);
+    contributed += monthly;
+    return [month, shares, contributed];
   });
 }
 
@@ -120,57 +132,119 @@ function renderPicker(data) {
   });
 }
 
-function addMix(data) {
+function saveMixes() {
+  const saved = mixes.map(({ name, weights, dca }) => ({ name, weights, dca }));
+  localStorage.setItem(storageKey, JSON.stringify(saved));
+}
+
+function addMix(data, weights, dca = document.querySelector("#dca").checked) {
   const note = document.querySelector("#note");
   try {
-    const weights = normalize(selectedWeights());
-    const symbols = Object.keys(weights);
-    const rows = portfolioReturns(overlap(symbols, data.series), symbols, weights);
+    const clean = normalize(weights);
+    const symbols = Object.keys(clean);
+    const rows = portfolioReturns(overlap(symbols, data.series), symbols, clean);
     if (rows.length < 2) throw new Error("重疊月份不夠");
     if (mixes.length >= colors.length) throw new Error("最多五組");
-    mixes.push({ name: label(weights), rows, summary: summarize(rows), color: colors[mixes.length] });
+    mixes.push({
+      name: label(clean) + (dca ? " · 定額" : ""),
+      weights: clean,
+      dca,
+      rows,
+      curve: dca ? dcaValue(rows) : null,
+      summary: summarize(rows),
+      color: colors[mixes.length],
+    });
     note.textContent = "";
+    saveMixes();
     draw();
   } catch (error) {
     note.textContent = error.message;
   }
 }
 
+function curveOf(mix) {
+  if (mix.dca) return mix.curve.map(([, value]) => value);
+  let growth = 10000;
+  return mix.rows.map(([, value]) => {
+    growth *= 1 + value;
+    return growth;
+  });
+}
+
+function scales() {
+  const curves = mixes.map(curveOf);
+  const longest = Math.max(...curves.map((points) => points.length), 1);
+  const flat = curves.flat();
+  return {
+    curves,
+    longest,
+    min: Math.min(...flat, 10000),
+    max: Math.max(...flat, 10000),
+  };
+}
+
+function pointAt(length, index, value, scale) {
+  const canvas = document.querySelector("#chart");
+  const x = pad + (index / Math.max(scale.longest - 1, 1)) * (canvas.width - pad * 2);
+  const y = pad + (1 - (value - scale.min) / Math.max(scale.max - scale.min, 1)) * (canvas.height - pad * 2);
+  return [x, y];
+}
+
 function draw() {
   const canvas = document.querySelector("#chart");
   const ctx = canvas.getContext("2d");
-  const width = canvas.width;
-  const height = canvas.height;
-  const pad = 28;
-  ctx.clearRect(0, 0, width, height);
-  const curves = mixes.map((mix) => {
-    let growth = 10000;
-    return mix.rows.map(([, value]) => {
-      growth *= 1 + value;
-      return growth;
-    });
-  });
-  const flat = curves.flat();
-  const min = Math.min(...flat, 10000);
-  const max = Math.max(...flat, 10000);
+  const scale = scales();
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.strokeStyle = "#e5e7eb";
   ctx.beginPath();
-  ctx.moveTo(pad, height - pad);
-  ctx.lineTo(width - pad, height - pad);
+  ctx.moveTo(pad, canvas.height - pad);
+  ctx.lineTo(canvas.width - pad, canvas.height - pad);
   ctx.stroke();
-  curves.forEach((points, index) => {
+  scale.curves.forEach((points, index) => {
     ctx.strokeStyle = mixes[index].color;
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     points.forEach((value, point) => {
-      const x = pad + (point / Math.max(points.length - 1, 1)) * (width - pad * 2);
-      const y = pad + (1 - (value - min) / Math.max(max - min, 1)) * (height - pad * 2);
+      const [x, y] = pointAt(points.length, point, value, scale);
       if (point === 0) ctx.moveTo(x, y);
       else ctx.lineTo(x, y);
     });
     ctx.stroke();
   });
   renderTables();
+}
+
+function hoverAt(event) {
+  const box = document.querySelector("#hover");
+  if (!mixes.length) return;
+  const canvas = document.querySelector("#chart");
+  const rect = canvas.getBoundingClientRect();
+  const x = (event.clientX - rect.left) * (canvas.width / rect.width);
+  const scale = scales();
+  const index = Math.round(((x - pad) / (canvas.width - pad * 2)) * Math.max(scale.longest - 1, 1));
+  if (index < 0 || index >= scale.longest) {
+    box.hidden = true;
+    draw();
+    return;
+  }
+  draw();
+  const ctx = canvas.getContext("2d");
+  const lineX = pointAt(scale.longest, index, scale.min, scale)[0];
+  ctx.strokeStyle = "#d1d5db";
+  ctx.beginPath();
+  ctx.moveTo(lineX, pad);
+  ctx.lineTo(lineX, canvas.height - pad);
+  ctx.stroke();
+  const rows = mixes.map((mix, mixIndex) => {
+    if (index >= mix.rows.length) return `<div style="color:${mix.color}">${mix.name} —</div>`;
+    const month = mix.rows[index][0];
+    const value = scale.curves[mixIndex][index];
+    const contributed = mix.dca ? mix.curve[index][2] : 10000;
+    const gain = value / contributed - 1;
+    return `<div style="color:${mix.color}">${month} ${mix.name}<br>${money.format(value)} · ${pct(gain)}</div>`;
+  });
+  box.hidden = false;
+  box.innerHTML = rows.join("");
 }
 
 function renderTables() {
@@ -181,6 +255,7 @@ function renderTables() {
     button.addEventListener("click", () => {
       mixes.splice(Number(button.dataset.index), 1);
       mixes.forEach((mix, index) => { mix.color = colors[index]; });
+      saveMixes();
       draw();
     });
   });
@@ -191,7 +266,7 @@ function renderTables() {
       <td>${pct(mix.summary.cagr)}</td>
       <td>${pct(mix.summary.volatility)}</td>
       <td class="down">${pct(mix.summary.maxDrawdown)}</td>
-      <td>${money.format(mix.summary.final)}</td>
+      <td>${money.format(mix.dca ? mix.curve.at(-1)[1] : mix.summary.final)}</td>
     </tr>
   `).join("");
   const years = [...new Set(mixes.flatMap((mix) => annualRows(mix.rows).map((row) => row.year)))].sort();
@@ -212,13 +287,23 @@ async function main() {
     ? `資料更新 ${data.updated_at.slice(0, 10)}`
     : "尚無資料";
   renderPicker(data);
-  document.querySelector("#add").addEventListener("click", () => addMix(data));
+  document.querySelector("#add").addEventListener("click", () => addMix(data, selectedWeights()));
+  document.querySelector("#chart").addEventListener("mousemove", hoverAt);
+  document.querySelector("#chart").addEventListener("mouseleave", () => {
+    document.querySelector("#hover").hidden = true;
+    draw();
+  });
+  const saved = JSON.parse(localStorage.getItem(storageKey) || "[]");
+  if (saved.length) {
+    saved.forEach((mix) => addMix(data, mix.weights, Boolean(mix.dca)));
+    return;
+  }
   ["0050.TW", "00679B.TWO"].forEach((symbol) => {
     const box = document.querySelector(`input[value="${symbol}"]`);
     box.checked = true;
     box.closest(".pick").querySelector(".weight").disabled = false;
   });
-  addMix(data);
+  addMix(data, selectedWeights(), false);
 }
 
 main();

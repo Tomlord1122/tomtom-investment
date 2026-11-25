@@ -17,12 +17,16 @@
     <section class="layout">
       <aside>
         <div id="picker"></div>
+        <label class="mode"><input id="dca" type="checkbox"> 定期定額，每月 1 萬</label>
         <button id="add" type="button">加入這組</button>
       </aside>
       <div>
         <p id="note"></p>
         <div id="legend"></div>
-        <canvas id="chart" width="720" height="280"></canvas>
+        <div class="chart-wrap">
+          <canvas id="chart" width="720" height="280"></canvas>
+          <div id="hover" hidden></div>
+        </div>
         <table>
           <thead>
             <tr>

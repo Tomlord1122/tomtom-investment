@@ -96,7 +96,28 @@ button {
   cursor: pointer;
 }
 
-canvas { width: 100%; height: auto; }
+.mode {
+  display: block;
+  margin-top: 14px;
+  font-size: 13px;
+}
+
+.chart-wrap { position: relative; }
+
+canvas { width: 100%; height: auto; cursor: crosshair; }
+
+#hover {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  min-width: 180px;
+  padding: 8px 10px;
+  background: rgb(250 250 250 / 0.94);
+  border: 1px solid #e5e7eb;
+  font-size: 12px;
+  line-height: 1.6;
+  pointer-events: none;
+}
 
 table {
   width: 100%;
