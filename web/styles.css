@@ -34,6 +34,43 @@ h1 img {
   border-radius: 12px;
 }
 
+a { color: inherit; }
+
+.fire { width: min(720px, calc(100% - 32px)); }
+
+.fire form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 20px;
+  margin-top: 24px;
+}
+
+.fire label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #6b7280; }
+
+.fire input {
+  border: 0;
+  border-bottom: 1px solid #d1d5db;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 18px;
+}
+
+#result {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-top: 28px;
+}
+
+#result strong {
+  display: block;
+  margin-top: 4px;
+  font-family: "Iowan Old Style", Palatino, serif;
+  font-size: 28px;
+  font-weight: 500;
+}
+
 .meta, small, .fine, #note {
   color: #6b7280;
   font-size: 13px;

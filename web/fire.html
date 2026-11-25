@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FIRE 計算</title>
+  <link rel="icon" href="./icon.webp" type="image/webp">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="fire">
+    <header>
+      <h1><img src="./icon.webp" alt="">FIRE 計算</h1>
+      <p class="meta"><a href="./index.html">投組比較</a></p>
+    </header>
+    <form id="fire" class="controls">
+      <label>目前資產 <input id="now" type="number" min="0" step="100000" value="1000000"></label>
+      <label>每年投入 <input id="save" type="number" min="0" step="10000" value="600000"></label>
+      <label>每年支出 <input id="spend" type="number" min="1" step="10000" value="600000"></label>
+      <label>實質報酬 % <input id="rate" type="number" min="0" max="15" step="0.1" value="5"></label>
+      <label>提領率 % <input id="swr" type="number" min="1" max="10" step="0.1" value="4"></label>
+    </form>
+    <div id="result"></div>
+  </main>
+  <script src="./fire.js"></script>
+</body>
+</html>
