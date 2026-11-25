@@ -28,8 +28,10 @@ h1 {
 }
 
 h1 img {
-  width: 28px;
-  height: 28px;
+  width: 36px;
+  height: 36px;
+  border: 2px solid #d1d5db;
+  border-radius: 12px;
 }
 
 .meta, small, .fine, #note {
