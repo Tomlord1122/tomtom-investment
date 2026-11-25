@@ -368,7 +368,7 @@ function chartMode() {
 }
 
 function shownMixes() {
-  return chartMode() === "rolling" ? mixes.filter((mix) => !mix.benchmark) : mixes;
+  return mixes;
 }
 
 function scales() {
