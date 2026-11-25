@@ -78,7 +78,7 @@ aside {
 
 .pick {
   display: grid;
-  grid-template-columns: 16px 1fr 92px;
+  grid-template-columns: 16px 1fr 148px;
   gap: 8px;
   align-items: center;
   padding: 7px 0;
@@ -99,10 +99,26 @@ aside {
   text-align: right;
 }
 
-.weight {
-  width: 92px;
-  accent-color: #1f2937;
+.slider {
+  display: grid;
+  grid-template-columns: 18px 1fr 24px 18px;
+  gap: 4px;
+  align-items: center;
 }
+
+.weight { width: 100%; accent-color: #1f2937; }
+
+.slider output { font-size: 12px; text-align: right; }
+
+.step {
+  width: 18px;
+  height: 18px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  line-height: 16px;
+}
+
+.step:disabled { color: #d1d5db; }
 
 .error { color: #b91c1c; font-size: 12px; }
 

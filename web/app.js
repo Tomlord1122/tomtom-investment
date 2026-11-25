@@ -172,16 +172,36 @@ function renderPicker(data) {
     row.innerHTML = `
       <input type="checkbox" value="${item.symbol}">
       <span><strong>${item.symbol}</strong><small>${item.name}</small></span>
-      <input class="weight" type="range" min="0" max="100" value="0" disabled>
+      <span class="slider">
+        <button type="button" class="step" data-step="-1" disabled>-</button>
+        <input class="weight" type="range" min="0" max="100" value="0" disabled>
+        <output>0</output>
+        <button type="button" class="step" data-step="1" disabled>+</button>
+      </span>
     `;
     const box = row.querySelector('input[type="checkbox"]');
     const weight = row.querySelector(".weight");
+    const output = row.querySelector("output");
+    const setWeight = (value) => {
+      weight.value = String(Math.min(100, Math.max(0, value)));
+      output.textContent = weight.value;
+      checkWeights();
+    };
     box.addEventListener("change", () => {
       weight.disabled = !box.checked;
-      if (box.checked && Number(weight.value) === 0) weight.value = "50";
-      checkWeights();
+      row.querySelectorAll(".step").forEach((button) => { button.disabled = !box.checked; });
+      if (box.checked && Number(weight.value) === 0) setWeight(50);
+      else setWeight(Number(weight.value));
     });
-    weight.addEventListener("input", checkWeights);
+    weight.addEventListener("input", () => setWeight(Number(weight.value)));
+    row.querySelectorAll(".step").forEach((button) => {
+      button.addEventListener("click", () => {
+        box.checked = true;
+        weight.disabled = false;
+        row.querySelectorAll(".step").forEach((item) => { item.disabled = false; });
+        setWeight(Number(weight.value) + Number(button.dataset.step));
+      });
+    });
     picker.appendChild(row);
   });
   document.querySelector("#filter").addEventListener("input", (event) => {
@@ -196,6 +216,7 @@ function checkWeights() {
   const total = Object.values(selectedWeights()).reduce((sum, value) => sum + value, 0);
   const error = document.querySelector("#weight-error");
   error.hidden = total <= 100;
+  error.textContent = `勾選的比例加總 ${total}，不能超過 100`;
   return total <= 100;
 }
 
@@ -209,6 +230,8 @@ function loadMix(index) {
     box.checked = value > 0;
     weight.disabled = value === 0;
     weight.value = String(value);
+    row.querySelector("output").textContent = String(value);
+    row.querySelectorAll(".step").forEach((button) => { button.disabled = value === 0; });
   });
   document.querySelector("#dca").checked = mix.dca;
   document.querySelector("#amount").value = String(mix.monthly);
