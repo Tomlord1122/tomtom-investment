@@ -238,6 +238,14 @@ table {
 
 .table-wrap th { position: sticky; top: 0; background: #fafafa; }
 
+#year-head th:not(:first-child),
+#stats td:first-child {
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 th { color: #6b7280; font-size: 12px; font-weight: 500; }
 
 td, th {

@@ -426,7 +426,7 @@ function renderTables() {
   });
   document.querySelector("#stats").innerHTML = mixes.map((mix) => `
     <tr>
-      <td>${mix.name}</td>
+      <td title="${mix.name}">${mix.name}</td>
       <td>${mix.summary.start}–${mix.summary.end}</td>
       <td>${pct(mix.summary.cagr)}</td>
       <td>${pct(mix.summary.volatility)}</td>
@@ -435,7 +435,7 @@ function renderTables() {
     </tr>
   `).join("");
   const years = [...new Set(mixes.flatMap((mix) => annualRows(mix.rows).map((row) => row.year)))].sort();
-  document.querySelector("#year-head").innerHTML = `<th>年度</th>${mixes.map((mix) => `<th>${mix.name}</th>`).join("")}`;
+  document.querySelector("#year-head").innerHTML = `<th>年度</th>${mixes.map((mix) => `<th title="${mix.name}">${mix.name}</th>`).join("")}`;
   document.querySelector("#years").innerHTML = years.map((year) => {
     const cells = mixes.map((mix) => {
       const row = annualRows(mix.rows).find((item) => item.year === year);
