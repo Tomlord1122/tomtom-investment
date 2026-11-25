@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-25T02:45:33Z",
+  "updated_at": "2026-11-25T03:01:33Z",
   "source": "Yahoo Finance chart API, monthly adjusted close",
   "symbols": [
     {
@@ -38,6 +38,27 @@
       "end": "2026-11"
     },
     {
+      "symbol": "00865B.TW",
+      "ok": true,
+      "months": 85,
+      "start": "2019-11",
+      "end": "2026-11"
+    },
+    {
+      "symbol": "2330.TW",
+      "ok": true,
+      "months": 323,
+      "start": "2000-01",
+      "end": "2026-11"
+    },
+    {
+      "symbol": "2454.TW",
+      "ok": true,
+      "months": 305,
+      "start": "2001-07",
+      "end": "2026-11"
+    },
+    {
       "symbol": "VTI",
       "ok": true,
       "months": 305,
@@ -66,24 +87,31 @@
       "end": "2026-11"
     },
     {
-      "symbol": "TIP",
+      "symbol": "NVDA",
       "ok": true,
-      "months": 275,
-      "start": "2004-01",
+      "months": 334,
+      "start": "1999-02",
       "end": "2026-11"
     },
     {
-      "symbol": "TLT",
+      "symbol": "TSLA",
       "ok": true,
-      "months": 292,
-      "start": "2002-08",
+      "months": 197,
+      "start": "2010-07",
       "end": "2026-11"
     },
     {
-      "symbol": "2330.TW",
+      "symbol": "GOOG",
       "ok": true,
-      "months": 323,
-      "start": "2000-01",
+      "months": 267,
+      "start": "2004-09",
+      "end": "2026-11"
+    },
+    {
+      "symbol": "SPCX",
+      "ok": true,
+      "months": 6,
+      "start": "2026-06",
       "end": "2026-11"
     }
   ]

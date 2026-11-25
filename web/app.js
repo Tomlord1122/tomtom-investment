@@ -120,6 +120,7 @@ function renderPicker(data) {
   data.symbols.forEach((item) => {
     const row = document.createElement("label");
     row.className = "pick";
+    row.dataset.find = `${item.symbol} ${item.name}`.toLowerCase();
     row.innerHTML = `
       <input type="checkbox" value="${item.symbol}">
       <span><strong>${item.symbol}</strong><small>${item.name}</small></span>
@@ -129,6 +130,12 @@ function renderPicker(data) {
     const weight = row.querySelector(".weight");
     box.addEventListener("change", () => { weight.disabled = !box.checked; });
     picker.appendChild(row);
+  });
+  document.querySelector("#filter").addEventListener("input", (event) => {
+    const query = event.target.value.trim().toLowerCase();
+    document.querySelectorAll(".pick").forEach((row) => {
+      row.hidden = query !== "" && !row.dataset.find.includes(query);
+    });
   });
 }
 
