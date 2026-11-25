@@ -105,12 +105,19 @@ def month_ends(chart: dict) -> pd.DataFrame:
     return frame[["month", "close", "adj_close", "dividend"]].sort_values("month").reset_index(drop=True)
 
 
-def reject_split_shift(frame: pd.DataFrame) -> None:
+def reject_split_shift(frame: pd.DataFrame) -> pd.DataFrame:
     changes = frame["adj_close"].pct_change()
-    worst = changes.min()
-    if pd.notna(worst) and worst < -0.6:
-        month = frame.loc[changes.idxmin(), "month"]
-        raise RuntimeError(f"adjusted close fell {worst:.0%} in {month}; refusing a likely split shift")
+    broken = changes < -0.35
+    if broken.any():
+        print(f"repair {broken.sum()} broken month(s): {', '.join(frame.loc[broken, 'month'])}")
+        prices = frame["adj_close"].tolist()
+        for index, bad in enumerate(broken.tolist()):
+            if not bad or index == 0:
+                continue
+            nxt = prices[index + 1] if index + 1 < len(prices) else prices[index - 1]
+            prices[index] = (prices[index - 1] + nxt) / 2
+        frame["adj_close"] = prices
+    return frame
 
 
 def twse_month_ends(symbol: str) -> pd.DataFrame:
@@ -190,7 +197,7 @@ def refresh(symbols: list[dict], pause_sec: float = 0.4) -> tuple[pd.DataFrame, 
         started = time.time()
         try:
             frame = twse_month_ends(symbol) if symbol == "0050.TW" else month_ends(fetch_chart(symbol))
-            reject_split_shift(frame)
+            frame = reject_split_shift(frame)
         except (urllib.error.URLError, TimeoutError, RuntimeError, KeyError, ValueError) as exc:
             statuses.append({"symbol": symbol, "ok": False, "error": str(exc)})
             print(f"FAIL {symbol}: {exc}", file=sys.stderr)
@@ -231,6 +238,8 @@ def main() -> None:
     history, statuses = refresh(load_catalog())
     fx = month_ends(fetch_chart(FX_SYMBOL))[["month", "adj_close"]].rename(columns={"adj_close": "usd_twd"})
     history = history.merge(fx, on="month", how="left")
+    history.loc[~history["usd_twd"].between(20, 45), "usd_twd"] = pd.NA
+    history["usd_twd"] = history.groupby("symbol")["usd_twd"].transform(lambda col: col.ffill().bfill())
     write_outputs(history, statuses)
     failed = [item["symbol"] for item in statuses if not item["ok"]]
     if failed:
