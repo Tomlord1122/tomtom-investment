@@ -187,7 +187,7 @@ button {
   align-items: center;
 }
 
-#add {
+#add, #save {
   width: 100%;
   padding: 8px 0;
   border: 1px solid #1f2937;
