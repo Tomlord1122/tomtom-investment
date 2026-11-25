@@ -52,5 +52,7 @@ if (saved) {
   document.querySelector("#swr").value = saved.swr * 100;
   document.querySelector("#horizon").value = saved.horizon ?? 10;
 }
-document.querySelector("#fire").addEventListener("input", render);
+const form = document.querySelector("#fire");
+form.addEventListener("input", render);
+form.addEventListener("change", render);
 render();
