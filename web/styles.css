@@ -111,13 +111,24 @@ button {
   cursor: pointer;
 }
 
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 12px 0 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
 .mode, .window {
   display: flex;
   gap: 8px;
   align-items: center;
-  margin-top: 14px;
+  margin-top: 0;
   font-size: 13px;
 }
+
+button { margin-top: 0; }
 
 .window select {
   border: 0;

@@ -17,17 +17,19 @@
     <section class="layout">
       <aside>
         <input id="filter" type="search" placeholder="代號或名稱" autocomplete="off">
+        <div class="controls">
+          <label class="window">
+            區間
+            <select id="window">
+              <option value="0">全部</option>
+              <option value="5">近 5 年</option>
+              <option value="10">近 10 年</option>
+            </select>
+          </label>
+          <label class="mode"><input id="dca" type="checkbox"> 定期定額，每月 1 萬</label>
+          <button id="add" type="button">加入這組</button>
+        </div>
         <div id="picker"></div>
-        <label class="window">
-          區間
-          <select id="window">
-            <option value="0">全部</option>
-            <option value="5">近 5 年</option>
-            <option value="10">近 10 年</option>
-          </select>
-        </label>
-        <label class="mode"><input id="dca" type="checkbox"> 定期定額，每月 1 萬</label>
-        <button id="add" type="button">加入這組</button>
       </aside>
       <div>
         <p id="note"></p>
